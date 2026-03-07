@@ -316,7 +316,7 @@ export default function App() {
 
               <div className="mt-8 text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 border border-gray-800 text-xs text-gray-500">
-                  Powered by Qwen3 Coder via OpenRouter | DFT B3LYP/6-31G* quinone dataset (25 molecules)
+                  Powered by OpenRouter Free Router | DFT B3LYP/6-31G* quinone dataset (25 molecules)
                 </div>
               </div>
             </div>
