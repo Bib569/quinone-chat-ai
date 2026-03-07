@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, FormEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Send, Atom, Trash2, ChevronDown, ChevronUp, Loader2, Home } from 'lucide-react'
+import { Send, Atom, Trash2, ChevronDown, ChevronUp, Loader2, Home, BookOpen } from 'lucide-react'
+import MethodsLibrary from './components/MethodsLibrary'
 
 interface Message {
   id: string
@@ -113,6 +114,7 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showLibrary, setShowLibrary] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -245,6 +247,15 @@ export default function App() {
               <Home size={16} />
             </a>
 
+            {/* Methods Library */}
+            <button
+              onClick={() => setShowLibrary(true)}
+              className="p-2 rounded-lg text-gray-400 hover:text-quantum-400 hover:bg-gray-800 transition-colors"
+              title="QC Methods Library"
+            >
+              <BookOpen size={16} />
+            </button>
+
             {/* Clear Chat */}
             <button
               onClick={clearChat}
@@ -358,6 +369,8 @@ export default function App() {
           </div>
         </form>
       </footer>
+
+      {showLibrary && <MethodsLibrary onClose={() => setShowLibrary(false)} />}
     </div>
   )
 }
