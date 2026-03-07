@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, FormEvent } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Send, Atom, Trash2, ChevronDown, ChevronUp, Loader2, Home, BookOpen, Download } from 'lucide-react'
+import { Send, Atom, Trash2, ChevronDown, ChevronUp, Loader2, Home, BookOpen } from 'lucide-react'
 import MethodsLibrary from './components/MethodsLibrary'
+import ExportMenu from './components/ExportMenu'
 
 interface Message {
   id: string
@@ -104,6 +105,15 @@ function ChatMessage({ message }: { message: Message }) {
         </div>
         {(detectedSmiles || message.moleculeSmiles) && (
           <MoleculeImage smiles={(message.moleculeSmiles || detectedSmiles)!} />
+        )}
+        {!isUser && (
+          <div className="flex justify-end mt-2">
+            <ExportMenu
+              title="QuantumChat Response"
+              markdownContent={message.content}
+              baseFilename={`quantumchat_${message.id}`}
+            />
+          </div>
         )}
       </div>
     </div>
@@ -217,27 +227,6 @@ export default function App() {
     }
   }
 
-  const exportChat = () => {
-    const exportData = {
-      timestamp: new Date().toISOString(),
-      app: 'QuantumChat',
-      messageCount: messages.length,
-      conversation: messages.map(m => ({
-        role: m.role,
-        content: m.content,
-        ...(m.thinking ? { reasoning: m.thinking } : {}),
-        ...(m.moleculeSmiles ? { detectedSmiles: m.moleculeSmiles } : {}),
-      })),
-    }
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `quantumchat_${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   const clearChat = () => {
     setMessages([])
   }
@@ -267,17 +256,6 @@ export default function App() {
             >
               <Home size={16} />
             </a>
-
-            {/* Export Chat */}
-            {messages.length > 0 && (
-              <button
-                onClick={exportChat}
-                className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-gray-800 transition-colors"
-                title="Export chat (JSON)"
-              >
-                <Download size={16} />
-              </button>
-            )}
 
             {/* Methods Library */}
             <button
