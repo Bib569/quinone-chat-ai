@@ -204,10 +204,14 @@ export default function App() {
 
       setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
+      const raw = error instanceof Error ? error.message : 'Unknown error'
+      const is502 = raw.includes('502') || raw.toLowerCase().includes('overloaded') || raw.toLowerCase().includes('non-json')
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please check that the API is configured correctly and try again.`,
+        content: is502
+          ? `⚠️ **The OpenRouter free router is temporarily overloaded (502).** This is a known intermittent issue with free-tier routing — it usually resolves within seconds.\n\n**What to do:** Simply send your message again. The server already retried 3 times automatically. If errors persist, wait 30–60 seconds and try once more.`
+          : `Sorry, I encountered an error: ${raw}. Please check that the API is configured correctly and try again.`,
       }
       setMessages(prev => [...prev, errorMessage])
     } finally {
