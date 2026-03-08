@@ -4,7 +4,7 @@
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-quinone--chat--ai.netlify.app-6366f1)](https://quinone-chat-ai.netlify.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A conversational AI interface for quantum chemistry — specialising in quinone derivatives, HOMO-LUMO gap analysis, DFT theory, and computational chemistry methods. Powered by the **OpenRouter Free Router** (automatic model selection) via the OpenRouter API.
+A conversational AI interface for quantum chemistry — specialising in quinone derivatives, HOMO-LUMO gap analysis, DFT theory, and computational chemistry methods. Powered by the **Groq API** with selectable free-plan models (Kimi K2, Llama 3.3 70B, Qwen3 32B, GPT-OSS 120B) and optional thinking mode.
 
 **🔗 Live Demo:** [https://quinone-chat-ai.netlify.app](https://quinone-chat-ai.netlify.app)  
 **🔗 Companion App (task-oriented):** [QuantumTask](https://github.com/Bib569/quinone-task-ai)
@@ -20,24 +20,29 @@ A conversational AI interface for quantum chemistry — specialising in quinone 
 | **QC Methods Library** | Searchable reference panel: 20+ methods, 25+ DFT functionals, 18+ basis sets, key equations |
 | **Export Chat** | Download any AI response as **Markdown**, **PDF**, or **Word (.docx)** |
 | **Quinone Dataset** | 25 quinone derivatives with DFT B3LYP/6-31G* HOMO/LUMO/gap values embedded in system prompt |
+| **Model Selector** | Dropdown in header to switch between 4 Groq models (Kimi K2, Llama 3.3 70B, Qwen3 32B, GPT-OSS 120B) |
+| **Thinking Mode** | Toggle beside model selector — enabled for Qwen3 32B (chain-of-thought reasoning shown in collapsible panel) |
 | **Auto-retry** | Server retries up to 3× on 502/503/429 errors automatically |
 | **k-NN Prediction** | HOMO-LUMO gap estimates for arbitrary molecules via structural similarity |
 
 ---
 
-## ⚠️ Known Issue: 502 Errors (Free Tier)
+## ⚠️ Rate Limits (Groq Free Plan)
 
-> **The OpenRouter Free Router is occasionally overloaded**, returning HTTP 502 or empty responses. This is a known limitation of free-tier LLM routing.
+Groq's free plan has per-minute token limits per model. If you hit a rate limit (HTTP 429):
 
-**What happens automatically:**
-- The server retries **up to 3 times** with 1.2 s / 2.4 s backoff before returning an error.
+1. **Wait 10–30 seconds** and resend your message — limits reset quickly.
+2. **Switch to a different model** using the dropdown in the header.
+3. The server retries **up to 3 times** automatically before surfacing an error.
 
-**What to do if you see a 502 error:**
-1. **Simply resend your message** — the router usually recovers within seconds.
-2. If errors persist, wait **30–60 seconds** and try again.
-3. Peak hours (UTC 14:00–22:00) have higher failure rates.
+| Model | Free RPM | Free TPM |
+|-------|----------|----------|
+| Kimi K2 (`moonshotai/kimi-k2-instruct`) | varies | varies |
+| Llama 3.3 70B (`llama-3.3-70b-versatile`) | 30 | 6,000 |
+| Qwen3 32B (`qwen/qwen3-32b`) | 30 | 6,000 |
+| GPT-OSS 120B (`openai/gpt-oss-120b`) | varies | varies |
 
-This limitation is inherent to free-tier AI routing and cannot be fully eliminated without a paid API plan.
+> Check current limits at [console.groq.com/settings/limits](https://console.groq.com/settings/limits)
 
 ---
 
@@ -58,7 +63,7 @@ This limitation is inherent to free-tier AI routing and cannot be fully eliminat
     │  ┌──────────────────┐  ┌────────────────────┐ │
     │  │  /chat           │  │  /molecule         │ │
     │  │  • 3× retry      │  │  • PubChem lookup  │ │
-    │  │  • OpenRouter API│  │  • DFT dataset     │ │
+    │  │  • Groq API      │  │  • DFT dataset     │ │
     │  │  • System prompt │  │  • k-NN prediction │ │
     │  └──────────────────┘  └────────────────────┘ │
     └──────────────────────────────────────────────┘
@@ -94,7 +99,8 @@ The interactive **QC Methods Library** (BookOpen icon in the header) provides a 
 | Markdown | react-markdown + remark-gfm | 9 / 4 |
 | Export | jsPDF + docx | latest |
 | Backend | Netlify Functions (serverless) | — |
-| LLM | OpenRouter Free Router | `openrouter/free` |
+| LLM | Groq API (free plan) | `api.groq.com` |
+| Models | Kimi K2, Llama 3.3 70B, Qwen3 32B, GPT-OSS 120B | selectable |
 | Chemistry | PubChem PUG-REST API | — |
 | Dataset | 25 quinones DFT B3LYP/6-31G* | — |
 | Hosting | Netlify (free tier) | — |
@@ -109,12 +115,12 @@ cd quinone-chat-ai
 npm install
 ```
 
-Create a `.env` file in the project root:
+The Groq API key is embedded in the serverless function for the free plan. To use your own key, set it as an environment variable:
 ```env
-OPENROUTER_API_KEY=your_openrouter_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 ```
 
-> Get a free API key at [openrouter.ai/keys](https://openrouter.ai/keys)
+> Get a free API key at [console.groq.com/keys](https://console.groq.com/keys)
 
 Run locally with Netlify CLI (required for serverless functions):
 ```bash
@@ -137,9 +143,9 @@ netlify deploy --prod --dir=dist
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `OPENROUTER_API_KEY` | ✅ Yes | API key from [openrouter.ai](https://openrouter.ai) |
+| `GROQ_API_KEY` | Optional | Override the built-in Groq API key. Get one at [console.groq.com/keys](https://console.groq.com/keys) |
 
-Set this in the **Netlify dashboard → Site settings → Environment variables** for production.
+The default key is embedded in `netlify/functions/chat.ts` for the free plan. For production with your own key, set it in **Netlify dashboard → Site settings → Environment variables** and update `chat.ts` to read `process.env.GROQ_API_KEY`.
 
 ---
 
@@ -173,21 +179,29 @@ quinone-chat-ai/
 
 ## 🧠 LLM Model Selection
 
-**Final choice: `openrouter/free`** (OpenRouter Free Router)
+**Gateway: Groq API** — switched from OpenRouter in v1.6.0 due to persistent free-tier 502 traffic overload errors.
 
-The Free Router automatically selects the best available free model for each request. Six models were evaluated before settling on this approach:
+### OpenRouter History (v1.0–v1.5)
 
 | Model | Status | Reason rejected |
 |-------|--------|-----------------|
 | `openai/gpt-oss-120b:free` | ❌ Blocked | Data-policy restriction on API key |
 | `z-ai/glm-4.5-air:free` | ❌ Rejected | Provider backend errors in production |
-| `qwen/qwen3-coder:free` | ❌ Rate-limited | 20 RPM cap caused production failures |
+| `qwen/qwen3-coder:free` | ❌ Rate-limited | 20 RPM cap caused failures |
 | `meta-llama/llama-3.3-70b-instruct:free` | ❌ Rejected | Intermittent provider errors |
-| `deepseek/deepseek-chat-v3-0324:free` | ❌ Not found | No endpoint on OpenRouter |
 | `arcee-ai/trinity-large-preview:free` | ❌ Rejected | Returns HTML instead of JSON |
-| **`openrouter/free`** | ✅ **Selected** | Smart routing, no restrictions, auto-fallback |
+| `openrouter/free` | ❌ Replaced | Persistent 502 overload under traffic |
 
-**Trade-off:** Occasional 502 overload errors (mitigated by server-side 3× retry).
+### Groq Models (v1.6.0+)
+
+| Model ID | Label | Thinking | Notes |
+|----------|-------|----------|-------|
+| `moonshotai/kimi-k2-instruct` | Kimi K2 | ✗ | **Default.** 1T MoE, 128K ctx, top intelligence |
+| `llama-3.3-70b-versatile` | Llama 3.3 70B | ✗ | Reliable, versatile, well-tested |
+| `qwen/qwen3-32b` | Qwen3 32B | ✅ | Supports thinking mode (chain-of-thought) |
+| `openai/gpt-oss-120b` | GPT-OSS 120B | ✗ | OpenAI MoE, high reasoning |
+
+**Why Groq:** Predictable low latency (~200–600 ms), stable JSON responses, no HTML fallbacks, clear rate-limit headers, and free-plan keys with reasonable TPM/RPM limits.
 
 ---
 
@@ -205,12 +219,13 @@ The Free Router automatically selects the best available free model for each req
 
 ## 🔧 Design Decisions
 
-1. **Serverless backend** — Netlify Functions keep `OPENROUTER_API_KEY` server-side; no CORS issues
-2. **3× auto-retry** — Transparent to users; absorbs most transient 502/503 failures
-3. **Embedded dataset** — Zero-latency DFT lookups without a database
-4. **k-NN gap prediction** — Structural-feature k-NN (k=3) predicts HOMO/LUMO for any SMILES using the 25-quinone dataset as reference; ±0.3–0.5 eV uncertainty
-5. **No thinking toggle** — Removed in final release; all candidate models failed reliable reasoning-mode routing via the free tier
-6. **Multi-format export** — jsPDF + docx enable offline archival of AI responses in standard formats
+1. **Groq backend** — Netlify Functions keep the API key server-side; OpenAI-compatible endpoint, no CORS issues
+2. **Model selector** — Right-hand side dropdown in header; persists for session; auto-disables thinking toggle for non-supporting models
+3. **Thinking toggle** — Purple brain icon appears only when Qwen3 32B is selected; sends `thinking: {type: 'enabled', budget_tokens: 2048}` to Groq
+4. **3× auto-retry** — Transparent to users; absorbs transient 429/502/503 with 1.5 s / 3.0 s backoff
+5. **Embedded dataset** — Zero-latency DFT lookups without a database
+6. **k-NN gap prediction** — Structural-feature k-NN (k=3) predicts HOMO/LUMO; ±0.3–0.5 eV uncertainty
+7. **Multi-format export** — jsPDF (Latin-1 sanitised) + docx for offline archival
 
 ---
 
@@ -218,6 +233,8 @@ The Free Router automatically selects the best available free model for each req
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6.0 | Mar 2026 | **Groq API migration**: model selector dropdown (Kimi K2 / Llama 3.3 / Qwen3 / GPT-OSS), thinking mode toggle for Qwen3 32B, 429 rate-limit error handling |
+| 1.5.0 | Mar 2026 | PDF export garbled character fix (`sanitiseForPDF` Latin-1 sanitisation) |
 | 1.4.0 | Mar 2026 | Server-side 3× retry for 502/503/429; improved error messages |
 | 1.3.0 | Mar 2026 | Multi-format export (MD/PDF/DOCX) inline per response |
 | 1.2.0 | Mar 2026 | QC Methods Library panel; comprehensive knowledge base |
