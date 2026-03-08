@@ -221,7 +221,7 @@ quinone-chat-ai/
 
 1. **Groq backend** — Netlify Functions keep the API key server-side; OpenAI-compatible endpoint, no CORS issues
 2. **Model selector** — Right-hand side dropdown in header; persists for session; auto-disables thinking toggle for non-supporting models
-3. **Thinking toggle** — Purple brain icon appears only when Qwen3 32B is selected; sends `thinking: {type: 'enabled', budget_tokens: 2048}` to Groq
+3. **Thinking toggle** — Purple brain icon appears only when Qwen3 32B is selected; sends `reasoning_effort: 'default'` + `reasoning_format: 'parsed'` to Groq; reasoning returned in `message.reasoning` field
 4. **3× auto-retry** — Transparent to users; absorbs transient 429/502/503 with 1.5 s / 3.0 s backoff
 5. **Embedded dataset** — Zero-latency DFT lookups without a database
 6. **k-NN gap prediction** — Structural-feature k-NN (k=3) predicts HOMO/LUMO; ±0.3–0.5 eV uncertainty
@@ -233,6 +233,7 @@ quinone-chat-ai/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6.1 | Mar 2026 | **Fix thinking mode**: replace invalid `thinking` param with correct Groq `reasoning_effort=default` + `reasoning_format=parsed` for Qwen3 32B |
 | 1.6.0 | Mar 2026 | **Groq API migration**: model selector dropdown (Kimi K2 / Llama 3.3 / Qwen3 / GPT-OSS), thinking mode toggle for Qwen3 32B, 429 rate-limit error handling |
 | 1.5.0 | Mar 2026 | PDF export garbled character fix (`sanitiseForPDF` Latin-1 sanitisation) |
 | 1.4.0 | Mar 2026 | Server-side 3× retry for 502/503/429; improved error messages |
